@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcaea B50 Viewer</title>
+<style>
+@font-face {
+  font-family: 'Exo-Regular';
+  src: url('./src/Fonts/Exo-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'GeosansLight';
+  src: url('./src/Fonts/GeosansLight.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'L2-Regular';
+  src: url('./src/Fonts/L2-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+:root {
+  --bg:#0b0c18; --bg2:#10121f; --bg3:#14162a;
+  --surface:#181b2e; --surf2:#1e2238;
+  --border:#272b48; --border2:#323660;
+  --accent:#c8a0ff; --accent2:#80c4ff;
+  --gold:#ffd580; --green:#6bffb8; --red:#ff6b8a;
+  --text:#eae8ff; --text2:#9896c8; --text3:#525080;
+  --pm_color:#2580A0; --fr_color:#773481;
+  --hc_color:#9a3753; --nc_color:#774271; --tl_color:#992b4c;
+  --p_color:#C534A2; --f_color:#EBB69D; --l_color:#a94658;
+  --date_color:#8d9da4; --ls_color:#504d8d; --no_color:#acaefb;
+  --byd:#e84060; --byd-light:#ff7090; --byd-bg:rgba(232,64,96,0.13);
+  --ftr:#a050f0; --ftr-light:#c080ff; --ftr-bg:rgba(160,80,240,0.13);
+  --etr:#8A7AA5; --etr-light:#A592C6; --etr-bg:rgba(203,167,247,0.12);
+  --pst:#4BACCF; --pst-light:#35b8e8; --pst-bg:rgba(39,172,255,0.1);
+  --prs:#50d890; --prs-light:#80ffb8; --prs-bg:rgba(80,216,144,0.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'GeosansLight',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(120,60,220,.10) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 85% 90%,rgba(50,90,200,.07) 0%,transparent 55%);pointer-events:none;z-index:0;}
+.wrap{max-width:1812px;margin:0 auto;padding:28px 20px 48px;position:relative;z-index:1}
+ 
+/* ── controls bar (top) ── */
+.controls-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;}
+.controls-row{display:flex;gap:15px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+.controls-row:last-child{margin-bottom:0;}
+.upload-group{display:flex;align-items:center;gap:20px;flex:1;min-width:180px;}
+.upload-tag{font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--text3);white-space:nowrap;}
+.upload-btn{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:5px 12px;font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:border-color .18s,color .18s;white-space:nowrap;}
+.upload-btn:hover{border-color:var(--accent);color:var(--accent);}
+input[type=file]{display:none;}
+.fstat{font-size:11px;color:var(--text3);font-family:'Exo-Regular',sans-serif;}
+.fstat.ok{color:var(--green);}
+.setting-item{display:flex;align-items:center;gap:8px;}
+.setting-label{font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;white-space:nowrap;}
+.seg-ctrl{display:flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden;}
+.seg-ctrl label{font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;padding:4px 10px;cursor:pointer;color:var(--text3);background:var(--surf2);transition:background .15s,color .15s;white-space:nowrap;}
+.seg-ctrl input{display:none;}
+.seg-ctrl input:checked+label{background:var(--ftr);color:#fff;}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;background:var(--surf2);border:1px solid var(--border2);border-radius:10px;transition:background .2s,border-color .2s;cursor:pointer;}
+.toggle input:checked+.toggle-track{background:var(--ftr);border-color:var(--ftr-light);}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .2s;pointer-events:none;}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px);}
+.divider-v{width:1px;height:20px;background:var(--border2);flex-shrink:0;}
+ 
+/* cq range inputs */
+.cq-input{width:60px;background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text);padding:4px 8px;font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:600;outline:none;transition:border-color .18s;text-align:center;}
+.cq-input:focus{border-color:var(--accent);}
+.cq-sep{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--text3);}
+.cq-preset-btn{font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);cursor:pointer;transition:all .15s;}
+.cq-preset-btn:hover{border-color:var(--accent);color:var(--accent);}
+.cq-preset-btn.active{border-color:var(--ftr);background:var(--ftr-bg);color:var(--ftr-light);}
+.cq-sort-select{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:4px 8px;font-family:'Exo-Regular',sans-serif;font-size:12px;outline:none;cursor:pointer;}
+ 
+/* ── header (player info) ── */
+.player-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;}
+.player-name{font-size:24px;font-weight:900;letter-spacing:.04em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ptt-pill{background:linear-gradient(135deg,#7030c8,#5020a0);border:1px solid #a060ff;border-radius:6px;padding:2px 10px 3px;font-size:13px;font-family:'Exo-Regular',sans-serif;font-weight:700;letter-spacing:.1em;color:#fff;}
+.header-btns{display:flex;gap:8px;align-self:center;}
+.stats-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;}
+.stat{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--text3);letter-spacing:.06em;}
+.stat b { color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums; font-family:'Exo-Regular',sans-serif; }
+.btn-confirm{background:linear-gradient(135deg,#7030c8,#5020a0);border:none;border-radius:6px;color:#fff;padding:7px 18px;font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:opacity .18s;}
+.btn-confirm:hover{opacity:.85;}
+.btn-cancel{background:var(--surf2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:7px 14px;font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .18s;}
+.btn-cancel:hover{border-color:var(--accent);color:var(--accent);}
+ 
+/* ── chart ── */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;margin-bottom:20px;position:relative;}
+.sec-lbl{font-family:'Exo-Regular',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:12px;}
+#ratingChart{width:100%;height:210px;cursor:crosshair;display:block;}
+.c-tip{position:absolute;background:var(--bg3);border:1px solid rgba(200,160,255,.5);border-radius:8px;padding:8px 14px;font-family:'Exo-Regular',sans-serif;pointer-events:none;display:none;z-index:50;min-width:190px;box-shadow:0 6px 24px rgba(0,0,0,.55);}
+.ct-date{font-size:11px;color:var(--text2);margin-bottom:3px;}
+.ct-ptt{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:.04em;}
+.ct-b30{font-size:11px;color:var(--text3);margin-top:2px;}
+ 
+/* ── export area ── */
+#exportArea{width:100%;}
+/* SVG grid container */
+.svg-grid-wrap{width:100%;overflow-x:auto;}
+.svg-grid-wrap svg{display:block;max-width:100%;height:auto;}
+ 
+/* cq expand button */
+.cq-expand{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--text3);cursor:pointer;padding:10px;border:1px dashed var(--border2);border-radius:8px;transition:all .18s;}
+.cq-expand:hover{border-color:var(--accent2);color:var(--accent2);}
+ 
+/* ── modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px 30px;min-width:300px;box-shadow:0 12px 48px rgba(0,0,0,.7);}
+.modal-box h3{font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15em;color:var(--text3);text-transform:uppercase;margin-bottom:16px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--text2);margin-bottom:6px;}
+.modal-field input{width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:7px 12px;font-family:'Exo-Regular',sans-serif;font-size:14px;outline:none;transition:border-color .18s;}
+.modal-field input:focus{border-color:var(--accent);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text3);font-family:'Exo-Regular',sans-serif;font-size:14px;letter-spacing:.1em;}
+.ei{font-size:36px;margin-bottom:10px;opacity:.3;}
+</style>
+</head>
+<body>
+<!-- Profile modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal-box">
+    <h3>填写存档信息</h3>
+    <div class="modal-field"><label>用户名</label><input type="text" id="mName" placeholder="Player"></div>
+    <div class="modal-field"><label>潜力值 (PTT)</label><input type="text" id="mPtt" placeholder="13.00"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnModalCancel">取消</button>
+      <button class="btn-confirm" id="btnModalOk">确认</button>
+    </div>
+  </div>
+</div>
+ 
+<div class="wrap">
+ 
+  <!-- Controls bar (top) -->
+  <div class="controls-bar">
+    <!-- Row 1: CSV upload -->
+    <div class="controls-row">
+      <div class="upload-group">
+        <div class="upload-tag">RATING</div>
+        <label class="upload-btn" for="f1">选择 CSV</label>
+        <input type="file" id="f1" accept=".csv">
+        <div class="fstat" id="s1">未加载</div>
+      </div>
+      <div class="upload-group">
+        <div class="upload-tag">PLAYS</div>
+        <label class="upload-btn" for="f2">选择 CSV</label>
+        <input type="file" id="f2" accept=".csv">
+        <div class="fstat" id="s2">未加载</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+        <label class="setting-item" style="cursor:pointer">
+          <input type="checkbox" id="exportIncludeHeader" style="width:14px;height:14px;cursor:pointer">
+          <span class="setting-label">含存档信息</span>
+        </label>
+        <label class="setting-item" style="cursor:pointer">
+          <input type="checkbox" id="exportIncludeChart" style="width:14px;height:14px;cursor:pointer">
+          <span class="setting-label">含图表</span>
+        </label>
+        <button class="upload-btn" id="btnExport">↓ 导出</button>
+        <button class="upload-btn" id="btnProfile">✎ 存档</button>
+      </div>
+    </div>
+    
+    <!-- Row 2: display settings -->
+    <div class="controls-row">
+      <div class="setting-item">
+        <div class="setting-label">模式</div>
+        <div class="seg-ctrl">
+          <input type="radio" name="displayMode" id="dmB30" value="b30" checked>
+          <label for="dmB30" id="rankModeLabel">B50</label>
+          <input type="radio" name="displayMode" id="dmCQ" value="cq">
+          <label for="dmCQ">定数查询</label>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">版本</div>
+        <div class="seg-ctrl">
+          <input type="radio" name="rankVersion" id="rv50" value="50" checked><label for="rv50">B50</label>
+          <input type="radio" name="rankVersion" id="rv30" value="30"><label for="rv30">旧版 B30</label>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">排行</div>
+        <div class="seg-ctrl">
+          <input type="radio" name="rankFilter" id="rfB30" value="b30" checked><label for="rfB30">B50</label>
+          <input type="radio" name="rankFilter" id="rfP30" value="p30"><label for="rfP30">P50</label>
+          <input type="radio" name="rankFilter" id="rfLS0" value="ls0"><label for="rfLS0">LS0</label>
+          <input type="radio" name="rankFilter" id="rfMax" value="max"><label for="rfMax">MAX</label>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">MaxPure</div>
+        <div class="seg-ctrl">
+          <input type="radio" name="mpStyle" id="mpPlus" value="plus" checked><label for="mpPlus">+max</label>
+          <input type="radio" name="mpStyle" id="mpMinus" value="minus"><label for="mpMinus">−shift</label>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">LS</div>
+        <label class="toggle"><input type="checkbox" id="togLS" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="divider-v"></div>
+      <!-- CQ range (hidden when b30 mode) -->
+      <div class="setting-item" id="cqRangeRow" style="display:none">
+        <div class="setting-label">定数</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;" id="cqPresets">
+          <button class="cq-preset-btn" data-min="7" data-max="7.9">7+</button>
+          <button class="cq-preset-btn" data-min="8" data-max="8.9">8+</button>
+          <button class="cq-preset-btn" data-min="9" data-max="9.9">9+</button>
+          <button class="cq-preset-btn" data-min="10" data-max="10.9">10+</button>
+          <button class="cq-preset-btn" data-min="11" data-max="11.9">11+</button>
+          <button class="cq-preset-btn" data-min="12" data-max="12.9">12+</button>
+        </div>
+        <input class="cq-input" id="cqMin" type="number" step="0.1" min="0" max="99" placeholder="min">
+        <span class="cq-sep">~</span>
+        <input class="cq-input" id="cqMax" type="number" step="0.1" min="0" max="99" placeholder="max">
+        <div class="setting-label">排序</div>
+        <select class="cq-sort-select" id="cqSort">
+          <option value="potential">PTT ↓</option>
+          <option value="score">Score ↓</option>
+          <option value="constant">Const ↓</option>
+          <option value="recent">最近</option>
+        </select>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- Player header -->
+  <div class="player-header">
+    <div>
+      <div class="player-name">
+        <span id="pName">Arcaea Best 50</span>
+        <span class="ptt-pill" id="pPtt">PTT —</span>
+        <span class="ptt-pill" id="pMaxPtt" style="background:linear-gradient(135deg,#204080,#102860);border-color:#4080c0;display:none">Max —</span>
+      </div>
+    </div>
+  </div>
+  <div class="stats-row" id="statsRow">
+    <div class="stat"><span id="bestAvgLabel">BEST50 Avg</span> <b id="sBavg" style="min-width:52px;display:inline-block">—</b></div>
+    <div class="stat">TOP10 Avg <b id="sT10" style="min-width:52px;display:inline-block">—</b></div>
+    <div class="stat">Date Range <b id="hRange" style="min-width:160px;display:inline-block">—</b></div>
+  </div>
+ 
+  <!-- Chart -->
+  <div class="chart-wrap">
+    <div class="sec-lbl">RATING HISTORY — 悬停查看排行 · 移出后保持</div>
+    <canvas id="ratingChart"></canvas>
+    <div class="c-tip" id="cTip">
+      <div class="ct-date" id="tipDate"></div>
+      <div class="ct-ptt" id="tipPtt"></div>
+      <div class="ct-b30" id="tipB30"></div>
+    </div>
+  </div>
+ 
+  <!-- Export area: header SVG + grid SVG -->
+  <div id="exportArea">
+    <!-- header SVG (b30-head as SVG) -->
+    <div id="headerSvgWrap" style="margin-bottom:8px;"></div>
+    <!-- card grid -->
+    <div class="svg-grid-wrap" id="gridWrap">
+      <div class="empty-state"><div class="ei">♪</div>请上传 CSV 文件后查看</div>
+    </div>
+    <!-- cq expand button -->
+    <div id="cqExpandWrap"></div>
+  </div>
+ 
+</div>
+ 
+<script src="rating.js"></script>
+<script src="canvas-style.js"></script>
+<script>
+// ── state ────────────────────────────────────────
+window.ratingHistory = [];
+window.playHistory   = [];
+window.chartData     = [];
+window.songMap       = {};
+window.userPttSet    = false;
+let hoverIdx    = -1;
+let hoverTs     = null;
+let lastQueryTs = null;
+let shownB30    = [];
+let shownDate   = '';
+let shownList   = []; // actual list rendered (b30 or cq filtered)
+ 
+// ── filters ──────────────────────────────────────
+const FILTERS = {
+  b30: null,
+  p30: p => p.far === 0 && p.lost === 0,
+  ls0: p => p.ls === 0 && p.diff >= 2,
+  max: p => p.pure === p.maxPure,
+};
+const FILTER_LABELS = { b30:'B50', p30:'P50', ls0:'LS0·50', max:'MAX·50' };
+ 
+window.settings = {
+  rankSize: 50,
+  filter: 'b30',
+  displayMode: 'b30',
+  showLS: true,
+  maxPureStyle: 'plus',
+};
+ 
+// ── CQ state ─────────────────────────────────────
+const cqState = { min: null, max: null, sort: 'potential', showAll: false };
+ 
+// ── utils ────────────────────────────────────────
+const toMs = t => t < 1e12 ? t * 1000 : t;
+const imgCache = new Map();
+ 
+function parseDateStr(s) {
+  if (!s) return null;
+  const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5]);
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+ 
+function calculateDaysSince(ts) {
+  if (!ts) return '—';
+  return Math.floor(Math.abs(Date.now() - ts) / 86400000);
+}
+ 
+function fmtScore(n) {
+  return String(n).padStart(8,'0').replace(/(\d{2})(\d{3})(\d{3})/, "$1'$2'$3");
+}
+ 
+function diffStyle(d) {
+  if (d===4) return { main:'#8A7AA5', bg:'rgba(203,167,247,0.15)', border:'rgba(138,122,165,.5)' };
+  if (d===3) return { main:'#e84060', bg:'rgba(232,64,96,0.15)',   border:'rgba(232,64,96,.5)'   };
+  if (d===2) return { main:'#a050f0', bg:'rgba(160,80,240,0.15)',  border:'rgba(160,80,240,.5)'  };
+  if (d===1) return { main:'#50d890', bg:'rgba(80,216,144,0.13)',  border:'rgba(80,216,144,.4)'  };
+  return             { main:'#4BACCF', bg:'rgba(39,172,255,0.12)', border:'rgba(75,172,207,.4)'  };
+}
+ 
+function clearCls(ct) {
+  if (ct===5) return { lbl:'HC', col:'#9a3753' };
+  if (ct===4) return { lbl:'EC', col:'#6a4080' };
+  if (ct===3) return { lbl:'PM', col:'#2580A0' };
+  if (ct===2) return { lbl:'FR', col:'#773481' };
+  if (ct===1) return { lbl:'NC', col:'#774271' };
+  if (ct===0) return { lbl:'TL', col:'#992b4c' };
+  return { lbl:'', col:'' };
+}
+ 
+function imgSrc(songId, diff) {
+  return diff === 3
+    ? `./src/songs/${songId}/1080_3_256.jpg`
+    : `./src/songs/${songId}/1080_base_256.jpg`;
+}
+ 
+function songTitle(id) {
+  return songMap[id] || id;
+}
+ 
+// ── text measure ─────────────────────────────────
+const _mc = document.createElement('canvas').getContext('2d');
+function measureText(text, font) { _mc.font = font; return _mc.measureText(text).width*1.1; }
+function truncateSVG(text, maxW, font) {
+  if (measureText(text, font) <= maxW) return text;
+  let lo = 0, hi = text.length;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    measureText(text.slice(0, mid) + '…', font) <= maxW ? lo = mid : hi = mid - 1;
+  }
+  return text.slice(0, lo-1) + '…';
+}
+ 
+// ── base64 / font ─────────────────────────────────
+const b64Cache = new Map();
+async function toBase64(url) {
+  if (b64Cache.has(url)) return b64Cache.get(url);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const buf  = await res.arrayBuffer();
+    const mime = res.headers.get('content-type') || 'image/jpeg';
+    const b64  = btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const uri  = `data:${mime};base64,${b64}`;
+    b64Cache.set(url, uri);
+    return uri;
+  } catch { return null; }
+}
+ 
+const fontB64 = {};
+const loadedFonts = new Set();
+async function preloadFonts() {
+  const fonts = [
+    { name:'Exo-Regular',  path:'./src/Fonts/Exo-Regular.ttf'  },
+    { name:'GeosansLight', path:'./src/Fonts/GeosansLight.ttf' },
+    { name:'L2-Regular',   path:'./src/Fonts/L2-Regular.ttf'   },
+  ];
+  await Promise.all(fonts.map(async f => {
+    // base64 for SVG export
+    const uri = await toBase64(f.path);
+    if (uri) fontB64[f.name] = uri;
+    // FontFace API for canvas export
+    try {
+      const ff = new FontFace(f.name, `url(${f.path})`);
+      await ff.load();
+      document.fonts.add(ff);
+      loadedFonts.add(f.name);
+    } catch(e) { console.warn('FontFace load failed:', f.name, e); }
+  }));
+}
+preloadFonts();
+ 
+function svgFontDefs() {
+  const faces = Object.entries(fontB64).map(([name, uri]) =>
+    `@font-face{font-family:'${name}';src:url('${uri}') format('truetype');}`
+  ).join('');
+  return `<style>${faces}</style>`;
+}
+ 
+async function resolveImgBase64(songId, diff) {
+  // 优先用 imgCache 里已经验证过的路径
+  const cached = imgCache.get(songId+'_'+diff);
+  if (cached && !cached.startsWith('data:')) {
+    // cached 是路径字符串，直接转 base64
+    const uri = await toBase64(cached);
+    if (uri) return uri;
+  }
+  console.log('Resolving image for', songId, 'diff', diff);
+  // 否则按优先级逐一尝试
+  const candidates = diff === 3
+    ? [`./src/songs/${songId}/1080_3_256.jpg`,`./src/songs/${songId}/1080_base_256.jpg`,`./src/songs/${songId}/base_256.jpg`]
+    : [`./src/songs/${songId}/1080_base_256.jpg`,`./src/songs/${songId}/base_256.jpg`];
+  for (const url of candidates) {
+    const uri = await toBase64(url);
+    if (uri) return uri;
+  }
+  console.log('Failed to resolve image for', songId, 'diff', diff);
+  return null;
+}
+ 
+// ── SVG constants ─────────────────────────────────
+const SV = {
+  COLS:5, CARD_W:348, CARD_H:82, GAP:8, COVER:82,
+  BODY_X:94,   // cover(82)+gap(3)+accent(3)+pad(6)
+  R1_Y:20, R2_Y:54, R3_Y:66, DATE_Y:74,
+  BG:'#181b2e', SURF2:'#1e2238',
+  TEXT:'#eae8ff', TEXT2:'#9896c8', TEXT3:'#525080',
+  NO_COL:'#acaefb',
+  P_COL:'#C534A2', F_COL:'#EBB69D', L_COL:'#a94658',
+  DATE_COL:'#8d9da4', LS_COL:'#504d8d',
+  ACC2:'#80c4ff',
+};
+ 
+// ── single card SVG (DOM mode, sync) ─────────────
+function cardSVGSync(p, i, x0, y0) {
+  const ds  = diffStyle(p.diff);
+  const cl  = clearCls(p.clearType);
+  const src = imgCache.get(p.songId+'_'+p.diff) || imgSrc(p.songId, p.diff);
+  const f1  = `./src/songs/${p.songId}/1080_base_256.jpg`;
+  const f2  = `./src/songs/${p.songId}/base_256.jpg`;
+  const R   = 10; // card corner radius
+
+  const titleStr   = truncateSVG(songTitle(p.songId), SV.CARD_W - SV.BODY_X - 84, '700 15px L2-Regular');
+  const scoreColor = p.pure === p.maxPure ? SV.ACC2 : SV.TEXT2;
+  const scoreGlow  = p.pure === p.maxPure ? 'filter:drop-shadow(0 0 4px rgba(100,180,255,0.7))' : 'filter:drop-shadow(0 0 2px rgba(152,150,200,0.5))';
+  const clearGlow  = p.clearType === 3 ? 'filter:drop-shadow(0 0 2px rgba(100,180,255,0.5))' : '';
+  const mpStr      = settings.maxPureStyle === 'plus' ? `(+${p.maxPure})` : `(-${p.pure - p.maxPure})`;
+  const bx = x0 + SV.BODY_X;
+
+  // card clip for accent bar + cover (share card's rounded rect)
+  const clipId = `cc${i}`;
+  const coverClipId = `cv${i}`;
+
+  return `<g class="sv-card" data-key="${p.songId}_${p.diff}">
+  <defs>
+    <!-- card shape clip: rounds left side only for accent+cover -->
+    <clipPath id="${clipId}">
+      <rect x="${x0}" y="${y0}" width="${SV.COVER+3}" height="${SV.CARD_H}" rx="${R}" ry="${R}"/>
+    </clipPath>
+    <!-- cover clip: square crop within the already-clipped area -->
+    <clipPath id="${coverClipId}">
+      <rect x="${x0+3}" y="${y0}" width="${SV.COVER}" height="${SV.CARD_H}"/>
+    </clipPath>
+  </defs>
+  <!-- card bg -->
+  <rect x="${x0}" y="${y0}" width="${SV.CARD_W}" height="${SV.CARD_H}" rx="${R}" fill="${SV.BG}" stroke="${ds.border}" stroke-width="1"/>
+  <!-- accent bar (clipped to card round corners) -->
+  <rect x="${x0}" y="${y0}" width="3" height="${SV.CARD_H}" fill="${ds.main}" clip-path="url(#${clipId})"/>
+  <!-- cover bg -->
+  <rect x="${x0+3}" y="${y0}" width="${SV.COVER}" height="${SV.CARD_H}" fill="${SV.SURF2}" clip-path="url(#${clipId})"/>
+  <!-- cover image -->
+  <image href="${src}" x="${x0+3}" y="${y0}" width="${SV.COVER}" height="${SV.CARD_H}"
+    preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"
+    onerror="if(!this.dataset.t){this.dataset.t='1';this.setAttribute('href','${f1}');}else if(this.dataset.t==='1'){this.dataset.t='2';this.setAttribute('href','${f2}');}else{this.style.display='none';}"
+    onload="
+  imgCache.set('${p.songId}_${p.diff}',this.getAttribute('href'));
+  var imgObj = new Image();
+  imgObj.src = this.getAttribute('href');
+  window._imgObjCache = window._imgObjCache || new Map();
+  window._imgObjCache.set('${p.songId}_${p.diff}', imgObj);
+"/>
+  <!-- row1: rank + title + ptt -->
+  <text x="${bx}" y="${y0+SV.R1_Y}" font-family="Exo-Regular" font-size="17" font-weight="700" fill="${SV.NO_COL}">#${i+1}</text>
+  <text x="${bx+34}" y="${y0+SV.R1_Y}" font-family="L2-Regular" font-size="15" font-weight="700" fill="${SV.TEXT}">${titleStr}</text>
+  <text x="${x0+SV.CARD_W-8}" y="${y0+SV.R1_Y}" font-family="Exo-Regular" font-size="16" font-weight="700" fill="${ds.main}" text-anchor="end">${p.potential.toFixed(4)}</text>
+  <!-- row2: score + clear + const -->
+  <text x="${bx}" y="${y0+SV.R2_Y-2}" font-family="Exo-Regular" font-size="26" font-weight="600" fill="${scoreColor}" style="${scoreGlow}">${fmtScore(p.score)}</text>
+  ${cl.lbl ? `<text x="${bx+155}" y="${y0+SV.R2_Y-3}" font-family="Exo-Regular" font-size="20" font-weight="700" fill="${cl.col}" style="${clearGlow}">${cl.lbl}</text>` : ''}
+  <rect x="${x0+SV.CARD_W-48}" y="${y0+SV.R2_Y-19}" width="38" height="17" rx="3" fill="${ds.bg}" stroke="${ds.border}" stroke-width="0.5"/>
+  <text x="${x0+SV.CARD_W-29}" y="${y0+SV.R2_Y-6}" font-family="Exo-Regular" font-size="13" font-weight="700" fill="${ds.main}" text-anchor="middle">${p.constant.toFixed(1)}</text>
+  <!-- row3: pfl + date on same baseline -->
+  <text x="${bx}" y="${y0+SV.DATE_Y}" font-family="Exo-Regular" font-size="12" fill="${SV.P_COL}">P/<tspan font-weight="700" fill="${SV.P_COL}">${p.pure}</tspan> <tspan fill="${SV.P_COL}">${mpStr}</tspan></text>
+  <text x="${bx+90}" y="${y0+SV.DATE_Y}" font-family="Exo-Regular" font-size="12" fill="${SV.F_COL}">F/<tspan font-weight="700" fill="${SV.F_COL}">${p.far}</tspan></text>
+  <text x="${bx+120}" y="${y0+SV.DATE_Y}" font-family="Exo-Regular" font-size="12" fill="${SV.L_COL}">L/<tspan font-weight="700" fill="${SV.L_COL}">${p.lost}</tspan></text>
+  ${settings.showLS ? `<text x="${bx+152}" y="${y0+SV.DATE_Y}" font-family="Exo-Regular" font-size="12" fill="${SV.LS_COL}">LS/<tspan font-weight="700" fill="${SV.LS_COL}">${p.ls.toFixed(1)}</tspan></text>` : ''}
+  <text x="${x0+SV.CARD_W-8}" y="${y0+SV.DATE_Y}" font-family="Exo-Regular" font-size="12" font-weight="700" fill="${SV.DATE_COL}" text-anchor="end">${calculateDaysSince(p.ts)}d</text>
+</g>`;
+}
+ 
+// ── grid SVG (DOM mode) ───────────────────────────
+function buildGridSVG(list) {
+  if (!list.length) return '';
+  const rows = Math.ceil(list.length / SV.COLS);
+  const svgW = SV.COLS * SV.CARD_W + (SV.COLS-1) * SV.GAP;
+  const svgH = rows * SV.CARD_H + (rows-1) * SV.GAP;
+  const cards = list.map((p, i) => {
+    const col = i % SV.COLS, row = Math.floor(i / SV.COLS);
+    return cardSVGSync(p, i, col*(SV.CARD_W+SV.GAP), row*(SV.CARD_H+SV.GAP));
+  }).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}" style="max-width:100%;height:auto">${cards}</svg>`;
+}
+ 
+// ── header SVG ────────────────────────────────────
+function buildHeaderSVG({ mode='b30', dateOrRange='', avg='', t10='', mxptt='', count }) {
+  const svgW = SV.COLS * SV.CARD_W + (SV.COLS-1) * SV.GAP;
+  const H    = 30;
+  const COL  = { title:0, date:40, avg:220, t10:320, mx:410 };
+
+  if (mode === 'cq') {
+    const label = `定数 ${dateOrRange}`;
+    const countStr = count !== undefined ? `  (${count})` : '';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${H}" width="${svgW}" height="${H}" style="max-width:100%;height:auto">
+  <text x="${COL.title}" y="20" font-family="Exo-Regular" font-size="13" font-weight="700" fill="#80c4ff">${label}</text>
+  <text x="${COL.title + 80}" y="20" font-family="Exo-Regular" font-size="11" fill="#525080">${countStr}</text>
+  ${avg ? `<text x="${COL.date+80}" y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">Avg <tspan fill="#c8a0ff" font-weight="700">${avg}</tspan></text>` : ''}
+</svg>`;
+  }
+
+  // B30 mode
+  const title = (FILTER_LABELS[settings.filter]||'B50').toUpperCase();
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${H}" width="${svgW}" height="${H}" style="max-width:100%;height:auto">
+  <text x="${COL.title}" y="20" font-family="Exo-Regular" font-size="11" font-weight="700" fill="#525080">${title}</text>
+  <text x="${COL.date}"  y="20" font-family="Exo-Regular" font-size="13" font-weight="600" fill="#80c4ff">${dateOrRange}</text>
+  ${avg ? `
+  <text x="${COL.avg}" y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">B${settings.rankSize}Avg <tspan fill="#c8a0ff" font-weight="700">${avg}</tspan></text>
+  <text x="${COL.t10}" y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">T10Avg <tspan fill="#c8a0ff" font-weight="700">${t10}</tspan></text>
+  <text x="${COL.mx}"  y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">Max <tspan fill="#c8a0ff" font-weight="700">${mxptt}</tspan></text>
+  ` : ''}
+</svg>`;
+}
+
+// ── 纯 Canvas 导出 ─────────────────────────────────
+async function exportToCanvas(list, { includeChart=false, includeHeader=false }={}) {
+  // 等待字体就绪
+  await document.fonts.ready;
+
+  const SCALE  = 2;
+  const PAD    = 20;
+  const svgW   = SV.COLS * SV.CARD_W + (SV.COLS-1) * SV.GAP;
+  const rows   = Math.ceil(list.length / SV.COLS);
+  const GRID_H = rows * SV.CARD_H + (rows-1) * SV.GAP;
+  const HEAD_H = 30;
+  const COL = { title:PAD, date:PAD+40, avg:PAD+220, t10:PAD+320, mx:PAD+410 };
+  // 预算总高度
+  const PLAYER_H = includeHeader ? 74 : 0;
+  const CHART_H  = includeChart && chartData.length
+    ? (parseInt(canvas.style.height||'210') + 44) : 0;
+  const totalH   = PAD + PLAYER_H + CHART_H + HEAD_H + 8 + GRID_H + PAD;
+  const totalW   = PAD * 2 + svgW;
+
+  const oc  = new OffscreenCanvas(totalW * SCALE, totalH * SCALE);
+  const c   = oc.getContext('2d');
+  c.scale(SCALE, SCALE);
+
+  // bg
+  c.fillStyle = '#0b0c18';
+  c.fillRect(0, 0, totalW, totalH);
+
+  let y = PAD;
+
+  // ── player header ──
+  if (includeHeader) {
+    const name = document.getElementById('pName').textContent;
+    const ptt  = document.getElementById('pPtt').textContent;
+    const maxP = document.getElementById('pMaxPtt');
+    c.font = 'bold 22px GeosansLight, sans-serif';
+    c.fillStyle = '#eae8ff';
+    c.textAlign = 'left';
+    c.fillText(name, PAD, y + 22);
+    const nameW = c.measureText(name).width;
+    // ptt pill
+    const pillX = PAD + nameW + 12;
+    c.fillStyle = '#5020a0';
+    roundRect(c, pillX, y + 6, c.measureText(ptt).width*0.95 , 22, 5);
+    c.fill();
+    c.strokeStyle = '#a060ff'; c.lineWidth = 1;
+    roundRect(c, pillX, y + 6, c.measureText(ptt).width*0.93, 22, 5);
+    c.stroke();
+    c.font = 'bold 13px Exo-Regular, sans-serif';
+    c.fillStyle = '#fff';
+    c.fillText(ptt, pillX + 10, y + 21);
+    if (maxP.style.display !== 'none') {
+      const maxT = maxP.textContent;
+      const maxX = pillX + c.measureText(ptt).width + 30;
+      c.fillStyle = '#102860';
+      roundRect(c, maxX, y + 6, c.measureText(maxT).width + 20, 22, 5);
+      c.fill();
+      c.strokeStyle = '#4080c0';
+      roundRect(c, maxX, y + 6, c.measureText(maxT).width + 20, 22, 5);
+      c.stroke();
+      c.fillStyle = '#fff';
+      c.fillText(maxT, maxX + 10, y + 21);
+    }
+    y += 42;
+    // stats row
+    c.font = '12px Exo-Regular, sans-serif'; c.fillStyle = '#525080';
+    const bavgVal = document.getElementById('sBavg').textContent;
+    const t10Val  = document.getElementById('sT10').textContent;
+    const rangeVal= document.getElementById('hRange').textContent;
+
+    const statsItems = [
+      { label:`BEST${settings.rankSize} Avg `,  val:bavgVal, valW:52  },
+      { label:'TOP10 Avg ',  val:t10Val,  valW:52  },
+      { label:'Date Range ', val:rangeVal,valW:160 },
+    ];
+    let sx = PAD;
+    for (const { label, val, valW } of statsItems) {
+      if (label) {
+        c.font = '12px Exo-Regular, sans-serif'; c.fillStyle = '#525080';
+        c.fillText(label, sx, y+14);
+        sx += c.measureText(label).width;
+      }
+      c.font = 'bold 12px Exo-Regular, sans-serif'; c.fillStyle = '#c8a0ff';
+      c.fillText(val, sx, y+14);
+      sx += valW + 16;
+    }
+    y += 20;
+  }
+
+  // ── chart ──
+  if (includeChart && chartData.length) {
+    c.font = 'bold 10px Exo-Regular, sans-serif';
+    c.fillStyle = '#525080';
+    c.textAlign = 'left';
+    c.fillText('RATING HISTORY', PAD, y + 14);
+    y += 20;
+    const chartH = parseInt(canvas.style.height||'210');
+    // chart bg
+    c.fillStyle = '#181b2e';
+    roundRect(c, PAD, y, svgW, chartH, 10); c.fill();
+    c.strokeStyle = '#272b48'; c.lineWidth = 1;
+    roundRect(c, PAD, y, svgW, chartH, 10); c.stroke();
+    // draw chart
+    c.save();
+    c.translate(PAD, y);
+    drawChartOnCtx(c, svgW, chartH);
+    c.restore();
+    y += chartH + 16;
+  }
+
+  // ── b30 header row ──
+  const hp          = window._lastHeaderParams || {};
+  const isCQ        = (hp.mode === 'cq') || settings.displayMode === 'cq';
+  const dateOrRange = hp.dateOrRange || '';
+  const exportAvg   = list.length ? list.reduce((s,x)=>s+x.potential,0)/list.length : 0;
+  const exportT10   = list.length ? list.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,list.length) : 0;
+  const exportMx    = (!isCQ) ? maxPotential(list) : null;
+
+
+  c.textAlign = 'left';
+  if (isCQ) {
+    const label     = `定数 ${dateOrRange}`;
+    const labelW    = c.measureText(label); // 先设好字体再量
+    c.font = 'bold 13px Exo-Regular, sans-serif'; c.fillStyle = '#80c4ff';
+    c.fillText(label, COL.title, y+18);
+    // 重新量宽（字体已设）
+    const lw = c.measureText(label).width;
+    c.font = '11px Exo-Regular, sans-serif'; c.fillStyle = '#525080';
+    c.fillText(`  (${list.length})`, COL.title + lw+5, y+18);
+    if (exportAvg) {
+      const avgX = COL.date + 80;
+      c.fillStyle = '#9896c8';
+      c.fillText('Avg ', avgX, y+18);
+      c.font = 'bold 11px Exo-Regular, sans-serif'; c.fillStyle = '#c8a0ff';
+      c.fillText(exportAvg.toFixed(4), avgX + c.measureText('Avg ').width, y+18);
+    }
+  } else {
+    const title = (FILTER_LABELS[settings.filter]||'B50').toUpperCase();
+    c.font = 'bold 11px Exo-Regular, sans-serif'; c.fillStyle = '#525080';
+    c.fillText(title, COL.title, y+18);
+    c.font = '600 13px Exo-Regular, sans-serif'; c.fillStyle = '#80c4ff';
+    c.fillText(dateOrRange, COL.date, y+19);
+    if (exportAvg) {
+      const statCols = [
+        { label:`B${settings.rankSize}Avg `, val:exportAvg.toFixed(4), x:COL.avg },
+        { label:'T10Avg ', val:exportT10.toFixed(4), x:COL.t10 },
+        ...(exportMx !== null ? [{ label:'Max ', val:exportMx.toFixed(4), x:COL.mx }] : []),
+      ];
+      for (const { label, val, x } of statCols) {
+        c.font = '11px Exo-Regular, sans-serif'; c.fillStyle = '#9896c8';
+        c.fillText(label, x, y+18);
+        c.font = 'bold 11px Exo-Regular, sans-serif'; c.fillStyle = '#c8a0ff';
+        c.fillText(val, x + c.measureText(label).width, y+18);
+      }
+    }
+  }
+  y += HEAD_H;
+
+  const imgObjMap = window._imgObjCache || new Map();
+
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    const col = i % SV.COLS;
+    const row = Math.floor(i / SV.COLS);
+    const x0 = PAD + col * (SV.CARD_W + SV.GAP);
+    const y0 = y + row * (SV.CARD_H + SV.GAP);
+    await drawCardOnCtx(c, p, i, x0, y0, imgObjMap); // 传入图片对象映射
+  }
+
+  return oc.convertToBlob({ type:'image/png' });
+}
+
+// ── helper: roundRect ─────────────────────────────
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.lineTo(x+w-r, y); c.arcTo(x+w, y, x+w, y+r, r);
+  c.lineTo(x+w, y+h-r); c.arcTo(x+w, y+h, x+w-r, y+h, r);
+  c.lineTo(x+r, y+h); c.arcTo(x, y+h, x, y+h-r, r);
+  c.lineTo(x, y+r); c.arcTo(x, y, x+r, y, r);
+  c.closePath();
+}
+
+// ── chart drawing on any ctx ──────────────────────
+function drawChartOnCtx(c, W, H) {
+  if (!chartData.length) return;
+  const P={t:14,r:24,b:42,l:45};
+  const CW=W-P.l-P.r, CH=H-P.t-P.b;
+  const vals=chartData.map(d=>d.rating);
+  const mn=Math.min(...vals)-.08, mx=Math.max(...vals)+.08;
+  const xOf=i=>P.l+(i/(chartData.length-1||1))*CW;
+  const yOf=v=>P.t+(1-(v-mn)/(mx-mn))*CH;
+  for (let g=0;g<=4;g++){
+    const v=mn+(mx-mn)*g/4, y2=yOf(v);
+    c.strokeStyle='#1e2238'; c.lineWidth=1; c.setLineDash([3,4]);
+    c.beginPath(); c.moveTo(P.l,y2); c.lineTo(W-P.r,y2); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle='#8886b8'; c.font='bold 11px Exo-Regular,sans-serif'; c.textAlign='right';
+    c.fillText(v.toFixed(2),P.l-6,y2+4);
+  }
+  const gr=c.createLinearGradient(0,P.t,0,H-P.b);
+  gr.addColorStop(0,'rgba(160,80,240,.28)'); gr.addColorStop(1,'rgba(160,80,240,0)');
+  c.beginPath(); c.moveTo(xOf(0),yOf(chartData[0].rating));
+  for (let i=1;i<chartData.length;i++) c.lineTo(xOf(i),yOf(chartData[i].rating));
+  c.lineTo(xOf(chartData.length-1),H-P.b); c.lineTo(xOf(0),H-P.b);
+  c.closePath(); c.fillStyle=gr; c.fill();
+  c.beginPath(); c.moveTo(xOf(0),yOf(chartData[0].rating));
+  for (let i=1;i<chartData.length;i++) c.lineTo(xOf(i),yOf(chartData[i].rating));
+  c.strokeStyle='#b070ff'; c.lineWidth=2; c.setLineDash([]); c.stroke();
+  
+  const step=Math.max(1,Math.floor(chartData.length/6));
+  c.fillStyle='#9896c8'; c.font='bold 11px Exo-Regular,sans-serif'; c.setLineDash([]);
+  for (let i=0;i<chartData.length;i+=step){
+    const x2=xOf(i);
+    c.strokeStyle='#3a3860'; c.lineWidth=1;
+    c.beginPath(); c.moveTo(x2,H-P.b); c.lineTo(x2,H-P.b+4); c.stroke();
+    
+    const isFirst = (i === 0);
+    const isLast = (i + step >= chartData.length);
+    c.textAlign = isFirst ? 'left' : (isLast ? 'right' : 'center');
+    
+    const parts=chartData[i].dateStr.split(' ');
+    // 【修复】：使用 c.fillText 绘制到导出图片上
+    c.fillText(parts[0],x2,H-P.b+16);
+    if (parts[1]) c.fillText(parts[1],x2,H-P.b+28);
+  }
+}
+
+// ── single card canvas drawing ────────────────────
+async function drawCardOnCtx(c, p, i, x0, y0, imgObjMap) {
+  const key = p.songId + '_' + p.diff;
+  let img = imgObjMap.get(key);
+  if (!img || !img.complete || !img.naturalWidth) {
+    for (const src of [imgSrc(p.songId, p.diff), `./src/songs/${p.songId}/1080_base_256.jpg`, `./src/songs/${p.songId}/base_256.jpg`]) {
+      try {
+        img = new Image(); img.src = src; await img.decode();
+        imgObjMap.set(key, img); break;
+      } catch { img = null; }
+    }
+  } else { await img.decode(); }
+  ArcaeaCanvas.drawCard(c, p, i, x0, y0, { ...settings, songMap }, img);
+}
+
+// ── CSV parsers ───────────────────────────────────
+const { parseRatingCSV, parsePlayCSV } = ArcaeaRating;
+function calcBest30(ts=null, filter=null) {
+  const result = ArcaeaRating.calcBest(playHistory, ts, filter, settings.rankSize);
+  return { ...result, b30: result.top };
+}
+function maxPotential(list) { return ArcaeaRating.maxPotential(list, settings.rankSize); }
+
+function calcB30(ts) { return calcBest30(ts, FILTERS[settings.filter]); }
+ 
+// ── render helpers ────────────────────────────────
+function updateHeaderSVG(params) {
+  document.getElementById('headerSvgWrap').innerHTML = buildHeaderSVG(params);
+}
+ 
+function renderB30(b30, dateLabel) {
+  shownB30  = b30;
+  shownList = b30;
+  shownDate = dateLabel;
+  if (b30.length) {
+    const avg   = b30.reduce((s,x)=>s+x.potential,0)/b30.length;
+    const t10   = b30.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,b30.length);
+    const mxptt = maxPotential(b30);
+    document.getElementById('b30AL')  && (document.getElementById('b30AL').textContent = avg.toFixed(4));
+    document.getElementById('b30T10') && (document.getElementById('b30T10').textContent = t10.toFixed(4));
+    document.getElementById('b30mx')  && (document.getElementById('b30mx').textContent  = mxptt.toFixed(4));
+    updateHeaderSVG({ mode:'b30', dateOrRange:dateLabel, avg:avg.toFixed(4), t10:t10.toFixed(4), mxptt:mxptt.toFixed(4) });
+  } else {
+    updateHeaderSVG({ mode:'b30', dateOrRange:dateLabel, avg:'', t10:'', mxptt:'' });
+  }
+  window._lastHeaderParams = {
+    dateOrRange: dateLabel,
+    avg: b30.length ? (b30.reduce((s,x)=>s+x.potential,0)/b30.length).toFixed(4) : '',
+    t10: b30.length ? (b30.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,b30.length)).toFixed(4) : '',
+    mxptt: b30.length ? maxPotential(b30).toFixed(4) : '',
+    count: undefined,
+  };
+  const wrap = document.getElementById('gridWrap');
+  wrap.innerHTML = b30.length ? buildGridSVG(b30)
+    : '<div class="empty-state"><div class="ei">♪</div>此时间点无记录</div>';
+  document.getElementById('cqExpandWrap').innerHTML = '';
+}
+ 
+function showCurrentB30() {
+  const { b30, avg, t10avg } = calcB30(Date.now());
+  renderB30(b30, '当前');
+  updateStaticStats();
+}
+
+// 加载 plays 后计算全局最大 B30（不随时间变化）
+function updateStaticStats() {
+  if (!playHistory.length) return;
+  const { b30, avg, t10avg } = calcBest30(null, FILTERS[settings.filter]);
+  document.getElementById('sBavg').textContent = avg.toFixed(4);
+  document.getElementById('sT10').textContent  = t10avg.toFixed(4);
+  if (ratingHistory.length) {
+    const maxPtt = ratingHistory[ratingHistory.length-1].rating;
+    if (!userPttSet) document.getElementById('pPtt').textContent = 'PTT '+maxPtt.toFixed(3);
+  }
+}
+ 
+function runCQ(ts=null) {
+  const { min, max, sort, showAll } = cqState;
+  if (min===null||max===null) return;
+  const { all, avg } = ArcaeaRating.queryConstants(playHistory, ts, FILTERS[settings.filter], settings.rankSize, { min, max, sort });
+  const shown = showAll ? all : all.slice(0,settings.rankSize);
+  shownList = shown;
+  updateHeaderSVG({ mode:'cq', dateOrRange:`${min} ~ ${max}`, avg:avg.toFixed(4), count:all.length });
+  window._lastHeaderParams = {
+    mode: 'cq',
+    dateOrRange: `${min} ~ ${max}`,
+    avg: avg.toFixed(4),
+    count: all.length,
+  };
+  const wrap = document.getElementById('gridWrap');
+  wrap.innerHTML = all.length ? buildGridSVG(shown)
+    : '<div class="empty-state"><div class="ei">♪</div>该区间暂无记录</div>';
+  const expWrap = document.getElementById('cqExpandWrap');
+  if (!showAll && all.length > settings.rankSize) {
+    expWrap.innerHTML = `<div class="cq-expand" id="cqExpandBtn">▼ 显示全部 (${all.length} 条)</div>`;
+    document.getElementById('cqExpandBtn').addEventListener('click', ()=>{ cqState.showAll=true; runCQ(lastQueryTs); });
+  } else if (showAll && all.length > settings.rankSize) {
+    expWrap.innerHTML = `<div class="cq-expand" id="cqCollapseBtn">▲ 收起</div>`;
+    document.getElementById('cqCollapseBtn').addEventListener('click', ()=>{ cqState.showAll=false; runCQ(lastQueryTs); });
+  } else {
+    expWrap.innerHTML = '';
+  }
+}
+ 
+function rerenderCurrent() {
+  if (settings.displayMode==='b30') {
+    const ts = shownDate&&shownDate!=='当前' ? parseDateStr(shownDate)||Date.now() : Date.now();
+    const { b30, avg, t10avg } = calcB30(ts);
+    renderB30(b30, shownDate||'当前');
+  } else if (settings.displayMode==='cq' && cqState.min!==null) {
+    runCQ(lastQueryTs);
+  }
+}
+ 
+// ── chart ─────────────────────────────────────────
+const canvas = document.getElementById('ratingChart');
+const ctx    = canvas.getContext('2d');
+ 
+function resizeCanvas() {
+  const dpr  = window.devicePixelRatio||1;
+  const cssW = canvas.parentElement.clientWidth-44;
+  const cssH = 210;
+  canvas.style.width  = cssW+'px';
+  canvas.style.height = cssH+'px';
+  canvas.width  = Math.round(cssW*dpr);
+  canvas.height = Math.round(cssH*dpr);
+  drawChart();
+}
+ 
+function drawChart() {
+  const dpr = window.devicePixelRatio||1;
+  const W = parseInt(canvas.style.width||canvas.width);
+  const H = parseInt(canvas.style.height||canvas.height);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  if (!chartData.length) {
+    ctx.fillStyle='#3a3858'; ctx.font='12px Exo-Regular,sans-serif'; ctx.textAlign='center';
+    ctx.fillText('上传 Rating History CSV 后显示折线图', W/2, H/2);
+    return;
+  }
+  const P={t:14,r:24,b:42,l:45};
+  const CW=W-P.l-P.r, CH=H-P.t-P.b;
+  const vals=chartData.map(d=>d.rating);
+  const mn=Math.min(...vals)-.08, mx=Math.max(...vals)+.08;
+  const xOf=i=>P.l+(i/(chartData.length-1||1))*CW;
+  const yOf=v=>P.t+(1-(v-mn)/(mx-mn))*CH;
+  for (let g=0;g<=4;g++) {
+    const v=mn+(mx-mn)*g/4, y=yOf(v);
+    ctx.strokeStyle='#1e2238'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(P.l,y); ctx.lineTo(W-P.r,y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#8886b8'; ctx.font='bold 11px Exo-Regular,sans-serif'; ctx.textAlign='right';
+    ctx.fillText(v.toFixed(2), P.l-6, y+4);
+  }
+  const gr=ctx.createLinearGradient(0,P.t,0,H-P.b);
+  gr.addColorStop(0,'rgba(160,80,240,.28)'); gr.addColorStop(1,'rgba(160,80,240,0)');
+  ctx.beginPath(); ctx.moveTo(xOf(0),yOf(chartData[0].rating));
+  for (let i=1;i<chartData.length;i++) ctx.lineTo(xOf(i),yOf(chartData[i].rating));
+  ctx.lineTo(xOf(chartData.length-1),H-P.b); ctx.lineTo(xOf(0),H-P.b);
+  ctx.closePath(); ctx.fillStyle=gr; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(xOf(0),yOf(chartData[0].rating));
+  for (let i=1;i<chartData.length;i++) ctx.lineTo(xOf(i),yOf(chartData[i].rating));
+  ctx.strokeStyle='#b070ff'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+  
+  if (hoverIdx>=0 && hoverIdx<chartData.length) {
+    const hx=xOf(hoverIdx), hy=yOf(chartData[hoverIdx].rating);
+    ctx.beginPath(); ctx.moveTo(hx,P.t); ctx.lineTo(hx,H-P.b);
+    ctx.strokeStyle='rgba(180,120,255,.25)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(hx,hy,5,0,Math.PI*2);
+    ctx.fillStyle='#c080ff'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  const step=Math.max(1,Math.floor(chartData.length/6));
+  ctx.fillStyle='#9896c8'; ctx.font='bold 11px Exo-Regular,sans-serif'; ctx.setLineDash([]);
+  for (let i=0;i<chartData.length;i+=step) {
+    const x=xOf(i);
+    ctx.strokeStyle='#3a3860'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,H-P.b); ctx.lineTo(x,H-P.b+4); ctx.stroke();
+    
+    const isFirst = (i === 0);
+    const isLast = (i + step >= chartData.length);
+    ctx.textAlign = isFirst ? 'left' : (isLast ? 'right' : 'center');
+    
+    const parts=chartData[i].dateStr.split(' ');
+    // 这里是对网页画布渲染
+    ctx.fillText(parts[0], x, H-P.b+16);
+    if (parts[1]) ctx.fillText(parts[1], x, H-P.b+28);
+  }
+}
+ 
+function throttle(fn, ms) {
+  let last=0;
+  return function(...args) { const now=Date.now(); if(now-last<ms)return; last=now; fn.apply(this,args); };
+}
+ 
+canvas.addEventListener('mousemove', throttle(function(e) {
+  if (!chartData.length) return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left;
+  // 同步图表边距，使其与实际渲染挂钩
+  const PL=45, PR=24; 
+  const cssW=parseInt(canvas.style.width||canvas.width);
+  // 防止越界
+  const norm=Math.max(0, Math.min(1, (mx-PL)/(cssW-PL-PR))); 
+  hoverIdx=Math.round(norm*(chartData.length-1));
+  drawChart();
+  const d=chartData[hoverIdx];
+  hoverTs = parseDateStr(d.dateStr)||d.ts;
+  lastQueryTs = hoverTs;
+  const { b30, avg, t10avg } = calcB30(hoverTs);
+  const tip=document.getElementById('cTip');
+  document.getElementById('tipDate').textContent = d.dateStr;
+  document.getElementById('tipPtt').textContent  = 'PTT '+d.rating.toFixed(3);
+  document.getElementById('tipB30').textContent  = `B${settings.rankSize} ${avg.toFixed(4)}  ·  T10 ${t10avg.toFixed(4)}  ·  ${b30.length} 曲`;
+  tip.style.display='block';
+  let tx=e.clientX-rect.left+14, ty=e.clientY-rect.top-10;
+  if (tx+210>rect.width) tx-=220;
+  if (ty<0) ty=4;
+  tip.style.left=tx+'px'; tip.style.top=ty+'px';
+  if (settings.displayMode==='b30') renderB30(b30, d.dateStr);
+  else runCQ(hoverTs);
+}, 32));
+ 
+canvas.addEventListener('mouseleave', function() {
+  hoverIdx=-1; hoverTs=null;
+  drawChart();
+  document.getElementById('cTip').style.display='none';
+});
+ 
+// ── file upload ───────────────────────────────────
+document.getElementById('f1').addEventListener('change', function(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    ratingHistory=parseRatingCSV(ev.target.result);
+    chartData=ratingHistory;
+    document.getElementById('s1').textContent=`✓ ${ratingHistory.length} 行`;
+    document.getElementById('s1').className='fstat ok';
+    if (ratingHistory.length) {
+      const first=ratingHistory[0], last=ratingHistory[ratingHistory.length-1];
+      if (!userPttSet) document.getElementById('pPtt').textContent='PTT '+last.rating.toFixed(3);
+      document.getElementById('hRange').textContent=first.dateStr.split(' ')[0]+' ~ '+last.dateStr.split(' ')[0];
+    }
+    resizeCanvas();
+  };
+  r.readAsText(f);
+});
+ 
+document.getElementById('f2').addEventListener('change', function(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    playHistory=parsePlayCSV(ev.target.result);
+    document.getElementById('s2').textContent=`✓ ${playHistory.length} 行`;
+    document.getElementById('s2').className='fstat ok';
+    showCurrentB30();
+  };
+  r.readAsText(f);
+});
+ 
+// ── songlist ──────────────────────────────────────
+async function loadSonglist() {
+  const paths=['./src/songs/songlist','./src/songs/songlist.json','./src/songlist','./src/songlist.json'];
+  for (const path of paths) {
+    try {
+      const res=await fetch(path); if(!res.ok) continue;
+      const data=JSON.parse(await res.text());
+      songMap={};
+      for (const s of data.songs||[]) songMap[s.id]=(s.title_localized?.en)||s.id;
+      console.log('[Songlist] loaded',Object.keys(songMap).length,'songs from',path);
+      if (shownB30.length) rerenderCurrent();
+      return;
+    } catch(err) { console.warn('[Songlist] failed at',path,err.message); }
+  }
+}
+loadSonglist();
+ 
+// ── profile modal ─────────────────────────────────
+document.getElementById('btnProfile').addEventListener('click', ()=>document.getElementById('profileModal').classList.add('open'));
+document.getElementById('btnModalCancel').addEventListener('click', ()=>document.getElementById('profileModal').classList.remove('open'));
+document.getElementById('btnModalOk').addEventListener('click', ()=>{
+  const name=document.getElementById('mName').value.trim();
+  const ptt=document.getElementById('mPtt').value.trim();
+  if (name) document.getElementById('pName').textContent=name;
+  if (ptt&&!isNaN(parseFloat(ptt))) {
+    document.getElementById('pPtt').textContent='PTT '+parseFloat(ptt).toFixed(2);
+    userPttSet=true;
+    if (ratingHistory.length) {
+      const maxPtt=ratingHistory[ratingHistory.length-1].rating.toFixed(3);
+      document.getElementById('pMaxPtt').textContent='Max '+maxPtt;
+      document.getElementById('pMaxPtt').style.display='';
+    }
+  }
+  document.getElementById('profileModal').classList.remove('open');
+});
+document.getElementById('profileModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+ 
+// ── settings events ───────────────────────────────
+document.querySelectorAll('input[name="rankVersion"]').forEach(r=>r.addEventListener('change', function(){
+  settings.rankSize = Number(this.value);
+  SV.COLS = settings.rankSize === 50 ? 5 : 3;
+  document.querySelector('.wrap').style.maxWidth = settings.rankSize === 50 ? '1812px' : '1100px';
+  FILTER_LABELS.b30 = `B${settings.rankSize}`;
+  FILTER_LABELS.p30 = `P${settings.rankSize}`;
+  FILTER_LABELS.ls0 = `LS0·${settings.rankSize}`;
+  FILTER_LABELS.max = `MAX·${settings.rankSize}`;
+  document.getElementById('rankModeLabel').textContent = FILTER_LABELS.b30;
+  document.querySelector('label[for="rfB30"]').textContent = FILTER_LABELS.b30;
+  document.querySelector('label[for="rfP30"]').textContent = FILTER_LABELS.p30;
+  document.getElementById('bestAvgLabel').textContent = `BEST${settings.rankSize} Avg`;
+  if (/^Arcaea Best (30|50)$/.test(document.getElementById('pName').textContent)) document.getElementById('pName').textContent = `Arcaea Best ${settings.rankSize}`;
+  updateStaticStats();
+  rerenderCurrent();
+  resizeCanvas();
+}));
+document.getElementById('togLS').addEventListener('change', function(){ settings.showLS=this.checked; rerenderCurrent(); });
+document.querySelectorAll('input[name="mpStyle"]').forEach(r=>r.addEventListener('change',function(){ settings.maxPureStyle=this.value; rerenderCurrent(); }));
+document.querySelectorAll('input[name="rankFilter"]').forEach(r=>r.addEventListener('change',function(){ settings.filter=this.value; rerenderCurrent(); }));
+ 
+document.querySelectorAll('input[name="displayMode"]').forEach(r=>r.addEventListener('change',function(){
+  settings.displayMode=this.value;
+  document.getElementById('cqRangeRow').style.display = this.value==='cq' ? '' : 'none';
+  cqState.showAll=false;
+  if (this.value==='b30') showCurrentB30();
+  else { if(cqState.min===null) setCQRange(9,9.9); else runCQ(lastQueryTs); }
+}));
+ 
+// ── CQ events ─────────────────────────────────────
+function setCQRange(min, max, ts=null) {
+  cqState.min=min; cqState.max=max; cqState.showAll=false;
+  document.getElementById('cqMin').value=min;
+  document.getElementById('cqMax').value=max;
+  runCQ(ts);
+}
+ 
+document.getElementById('cqPresets').addEventListener('click', function(e){
+  const btn=e.target.closest('.cq-preset-btn'); if(!btn) return;
+  this.querySelectorAll('.cq-preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  setCQRange(parseFloat(btn.dataset.min), parseFloat(btn.dataset.max), lastQueryTs);
+});
+ 
+function onCustomInput() {
+  const min=parseFloat(document.getElementById('cqMin').value);
+  const max=parseFloat(document.getElementById('cqMax').value);
+  if (isNaN(min)||isNaN(max)) return;
+  document.querySelectorAll('.cq-preset-btn').forEach(b=>b.classList.remove('active'));
+  setCQRange(min, max, lastQueryTs);
+}
+document.getElementById('cqMin').addEventListener('change', onCustomInput);
+document.getElementById('cqMax').addEventListener('change', onCustomInput);
+document.getElementById('cqSort').addEventListener('change', function(){ cqState.sort=this.value; cqState.showAll=false; runCQ(lastQueryTs); });
+ 
+// ── export ────────────────────────────────────────
+document.getElementById('btnExport').addEventListener('click', async function() {
+  const list = shownList.length ? shownList : shownB30;
+  if (!list.length) { alert('请先加载数据'); return; }
+  this.textContent='生成中...'; this.disabled=true;
+  try {
+    const includeChart  = document.getElementById('exportIncludeChart').checked;
+    const includeHeader = document.getElementById('exportIncludeHeader').checked;
+    const blob = await exportToCanvas(list, { includeChart, includeHeader });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `b${settings.rankSize}-${(shownDate||'export').replace(/[\s:\/]/g,'-')}.png`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  } catch(e) { console.error('导出失败',e); alert('导出失败: '+e.message); }
+  finally { this.textContent='↓ 导出'; this.disabled=false; }
+});
+ 
+// ── Puppeteer API ─────────────────────────────────
+window.__RenderAPI = {
+  loadData(ratingCSV, playCSV) {
+    window.ratingHistory=parseRatingCSV(ratingCSV);
+    window.chartData=window.ratingHistory;
+    window.playHistory=parsePlayCSV(playCSV);
+  },
+  seekTo(ts) {
+    hoverIdx=ratingHistory.findIndex(d=>d.ts>=ts);
+    if (hoverIdx<0) hoverIdx=ratingHistory.length-1;
+    lastQueryTs=ts;
+    drawChart();
+    const { b30, avg, t10avg }=calcB30(ts);
+    renderB30(b30, ratingHistory[hoverIdx]?.dateStr||'');
+  },
+  getFrameInfo() { return { hoverIdx, rating:ratingHistory[hoverIdx]?.rating, dateStr:ratingHistory[hoverIdx]?.dateStr }; },
+  async waitForImages() {
+    const expected = document.querySelectorAll('svg image').length;
+    await new Promise(resolve => {
+      const check = () => {
+        imgCache.size >= expected ? resolve() : setTimeout(check, 100);
+      };
+      setTimeout(check, 200); // 给首次渲染留 200ms
+    });
+    await new Promise(r => setTimeout(r, 200)); // 额外缓冲
+  },
+  setOpacity(val) { document.getElementById('exportArea').style.opacity=val; },
+  getFingerprint() { return shownB30.map(p=>p.songId+'_'+p.diff+'_'+p.score).join('|'); },
+};
+ 
+window.addEventListener('resize', resizeCanvas);
+setTimeout(resizeCanvas, 60);
+
+// ── 本地自动加载（由 export_viewer.py 生成的国服 st3 数据）────────
+async function autoLoadLocal() {
+  try {
+    const r1 = await fetch('./data/ratings.csv');
+    if (r1.ok) {
+      ratingHistory = parseRatingCSV(await r1.text());
+      chartData = ratingHistory;
+      const s1 = document.getElementById('s1');
+      s1.textContent = `✓ ${ratingHistory.length} 行`;
+      s1.className = 'fstat ok';
+      if (ratingHistory.length) {
+        const first = ratingHistory[0], last = ratingHistory[ratingHistory.length - 1];
+        if (!userPttSet) document.getElementById('pPtt').textContent = 'PTT ' + last.rating.toFixed(3);
+        document.getElementById('hRange').textContent =
+          first.dateStr.split(' ')[0] + ' ~ ' + last.dateStr.split(' ')[0];
+      }
+      resizeCanvas();
+    }
+  } catch (e) { console.warn('[auto] ratings.csv', e); }
+  try {
+    const r2 = await fetch('./data/all_scores.csv');
+    if (r2.ok) {
+      playHistory = parsePlayCSV(await r2.text());
+      const s2 = document.getElementById('s2');
+      s2.textContent = `✓ ${playHistory.length} 行`;
+      s2.className = 'fstat ok';
+      showCurrentB30();
+    }
+  } catch (e) { console.warn('[auto] all_scores.csv', e); }
+}
+autoLoadLocal();
+</script>
+</body>
+</html>

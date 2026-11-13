@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arcaea b50 导出工具</title>
+<style>
+  :root{
+    --bg:#0b0d14; --panel:#141826; --panel2:#1b2032; --line:#272e45;
+    --text:#e8ecf7; --dim:#8b94ad; --dim2:#646d85;
+    --purple:#9b8cf5; --cyan:#5fd6c8; --gold:#f0b429; --red:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1100px 520px at 12% -8%, #201a3d 0%, transparent 60%),
+      radial-gradient(900px 480px at 88% -4%, #12283a 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);font:14px/1.6 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    min-height:100vh}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 22px 72px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#6d5ef0,#3fc0b4);font-weight:800;font-size:17px;
+    box-shadow:0 6px 22px rgba(109,94,240,.35)}
+  h1{font-size:19px;margin:0;letter-spacing:.3px}
+  .sub{color:var(--dim);font-size:12.5px;margin:2px 0 22px}
+  .card{background:linear-gradient(180deg,rgba(27,32,50,.9),rgba(20,24,38,.92));
+    border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;margin-bottom:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.22)}
+  .stephead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .n{width:24px;height:24px;border-radius:8px;background:#242b42;color:var(--purple);
+    display:grid;place-items:center;font-size:12.5px;font-weight:700}
+  .stephead h2{font-size:15px;margin:0;font-weight:600}
+  .stephead .tag{margin-left:auto;font-size:11.5px;color:var(--dim2)}
+  /* 品牌 tab */
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .tab{padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:#171c2c;
+    color:var(--dim);cursor:pointer;font-size:12.5px;transition:.15s}
+  .tab:hover{color:var(--text);border-color:#3a4463}
+  .tab.on{background:linear-gradient(135deg,#5b4ede,#3aa9a0);color:#fff;border-color:transparent;
+    font-weight:600;box-shadow:0 4px 14px rgba(91,78,222,.3)}
+  .guide{display:none}
+  .guide.on{display:block;animation:fade .2s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  ol{margin:0 0 12px;padding-left:22px}
+  ol li{margin:5px 0;color:#ccd4e6}
+  ol li b{color:#fff}
+  .note{background:rgba(240,180,41,.08);border-left:3px solid var(--gold);
+    padding:10px 12px;border-radius:0 8px 8px 0;color:#e4d6b4;font-size:12.5px;margin:10px 0}
+  .note.bad{background:rgba(255,107,107,.07);border-color:var(--red);color:#f2c2c2}
+  .note.ok{background:rgba(95,214,200,.07);border-color:var(--cyan);color:#bfe9e3}
+  kbd{background:#0e1220;border:1px solid #2c3450;border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:12px;color:var(--cyan)}
+  /* 状态 */
+  .status{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .dot{width:9px;height:9px;border-radius:50%;background:#4a5470;flex:none;
+    box-shadow:0 0 0 4px rgba(74,84,112,.15)}
+  .dot.ok{background:var(--cyan);box-shadow:0 0 0 4px rgba(95,214,200,.18)}
+  .dot.warn{background:var(--gold);box-shadow:0 0 0 4px rgba(240,180,41,.18)}
+  .dot.bad{background:var(--red);box-shadow:0 0 0 4px rgba(255,107,107,.18)}
+  .status .msg{flex:1;min-width:220px;color:var(--dim);font-size:13px}
+  .status .msg b{color:var(--text)}
+  button{font-family:inherit;cursor:pointer;border:0;border-radius:10px;
+    padding:10px 18px;font-size:13.5px;font-weight:600;transition:.16s}
+  .primary{background:linear-gradient(135deg,#6d5ef0,#4a9fe0);color:#fff;
+    box-shadow:0 6px 20px rgba(109,94,240,.3)}
+  .primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  .primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+  .ghost{background:#1c2233;border:1px solid var(--line);color:var(--dim)}
+  .ghost:hover{color:var(--text);border-color:#3b4569}
+  select{background:#121727;border:1px solid var(--line);color:var(--text);
+    border-radius:9px;padding:9px 12px;font-family:inherit;font-size:13px;outline:none}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .log{background:#0d111c;border:1px solid #212840;border-radius:10px;padding:12px 14px;
+    font-family:Consolas,"Courier New",monospace;font-size:12px;color:#93a0bb;
+    max-height:180px;overflow:auto;white-space:pre-wrap;line-height:1.7;margin-top:12px;display:none}
+  .log.on{display:block}
+  .log .ok{color:var(--cyan)}
+  .log .err{color:#ff8f8f}
+  /* 结果 */
+  #result{display:none}
+  #result.on{display:block}
+  .pttwrap{display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap;margin-bottom:16px}
+  .ptt{font-size:52px;font-weight:800;line-height:1;letter-spacing:-1.6px;
+    background:linear-gradient(96deg,#b3a4ff,#5fd6c8);-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .pttlab{font-size:11.5px;color:var(--dim);letter-spacing:.08em;margin-bottom:7px}
+  .kpis{display:flex;gap:24px;flex-wrap:wrap;margin-left:auto}
+  .kpi b{display:block;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .kpi span{font-size:11px;color:var(--dim2)}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+  .c{background:#161b2b;border:1px solid #262e46;border-radius:9px;overflow:hidden;
+    position:relative;transition:.16s}
+  .c.t10{border-color:#6b57c9;box-shadow:0 0 0 1px rgba(155,140,245,.35) inset}
+  .c:hover{transform:translateY(-2px);border-color:#4a5680}
+  .c .art{position:relative;aspect-ratio:1.32;background:#0f1320;overflow:hidden}
+  .c .art img{width:100%;height:100%;object-fit:cover;display:block}
+  .c .art .shade{position:absolute;inset:auto 0 0 0;height:46%;
+    background:linear-gradient(180deg,transparent,rgba(11,13,20,.92))}
+  .c .rk{position:absolute;top:4px;left:4px;background:rgba(10,12,20,.82);
+    border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;color:#dfe6f5}
+  .c .x2{position:absolute;top:4px;left:34px;background:rgba(107,87,201,.92);
+    border-radius:5px;padding:1px 5px;font-size:10px;font-weight:700;color:#efeaff}
+  .c .lv{position:absolute;top:5px;right:4px;background:rgba(10,12,20,.78);
+    border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700;border:1px solid}
+  .c .info{padding:6px 7px 7px}
+  .c .name{font-size:11.5px;color:#e6eaf5;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;margin-bottom:3px}
+  .c .nums{display:flex;justify-content:space-between;align-items:baseline;gap:4px}
+  .c .sp{font-size:13px;font-weight:700;color:#a8e2ff;font-variant-numeric:tabular-nums}
+  .c .sc{font-size:10.5px;color:#7d879e;font-variant-numeric:tabular-nums}
+  .c .ct{position:absolute;right:5px;top:calc(100% - 62px);font-size:9.5px;
+    background:rgba(10,12,20,.8);border-radius:4px;padding:0 4px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr)}.ptt{font-size:42px}}
+  footer{color:var(--dim2);font-size:11.5px;text-align:center;margin-top:26px;line-height:1.9}
+  .hidden{display:none!important}
+  .fileline{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .fileline label{background:#1c2233;border:1px dashed #3a4463;border-radius:9px;
+    padding:9px 14px;color:var(--dim);font-size:12.5px;cursor:pointer}
+  .fileline label:hover{color:var(--text);border-color:var(--purple)}
+  input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">A</div>
+    <div>
+      <h1>Arcaea / 韵律源点 b50 导出工具</h1>
+      <div class="sub">从手机本地存档直接算出 b50，不联网、不上传、不需要账号密码</div>
+    </div>
+  </header>
+
+  <!-- 1 教程 -->
+  <div class="card">
+    <div class="stephead"><div class="n">1</div><h2>打开手机的 USB 调试</h2>
+      <div class="tag">选中你的手机品牌，照着点</div></div>
+    <div class="tabs" id="tabs"></div>
+    <div id="guides"></div>
+  </div>
+
+  <!-- 2 连接 -->
+  <div class="card">
+    <div class="stephead"><div class="n">2</div><h2>连接手机</h2>
+      <div class="tag">数据线插电脑，先别急着下一步</div></div>
+    <div class="status">
+      <div class="dot" id="dot"></div>
+      <div class="msg" id="msg">还没检测。插好线、手机弹出「允许 USB 调试」后点右边按钮。</div>
+      <button class="ghost" id="btnCheck">检测连接</button>
+    </div>
+    <div class="note" style="margin-top:14px">
+      插上后手机通知栏会出现「正在通过 USB 充电」→ 点它 → 选 <b>传输文件 / MTP</b>。
+      选「仅充电」的话电脑看不到设备。
+    </div>
+  </div>
+
+  <!-- 3 导出 -->
+  <div class="card">
+    <div class="stephead"><div class="n">3</div><h2>读取成绩</h2>
+      <div class="tag">自动逐层尝试，失败会告诉你原因</div></div>
+    <div class="row">
+      <select id="pkg">
+        <option>国服（韵律源点）</option>
+        <option>国际服（Arcaea）</option>
+      </select>
+      <button class="primary" id="btnPull">开始读取</button>
+      <div class="fileline" style="margin:0">
+        <label for="fst3">读不到？手动选择 st3 文件</label>
+        <input type="file" id="fst3">
+      </div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="card" id="result">
+    <div class="stephead"><div class="n">✓</div><h2>你的 b50</h2>
+      <div class="tag" id="hint"></div></div>
+    <div class="pttwrap">
+      <div>
+        <div class="pttlab">POTENTIAL（B50 + B10 ÷ 60）</div>
+        <div class="ptt" id="ptt">—</div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><b id="kCount">—</b><span>有效谱面</span></div>
+        <div class="kpi"><b id="kCut50">—</b><span>第 50 名线</span></div>
+        <div class="kpi"><b id="kCut10">—</b><span>第 10 名线</span></div>
+        <div class="kpi"><b id="kAvg">—</b><span>b50 均值</span></div>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="row" style="margin-top:16px">
+      <button class="primary" id="btnJackets">补全曲绘</button>
+      <button class="ghost" id="btnViewer">打开完整分析（历史曲线 / 多排行）</button>
+      <button class="ghost" id="btnCsv">打开数据文件夹</button>
+    </div>
+    <div class="note ok" id="viewerHint" style="display:none"></div>
+  </div>
+
+  <footer>
+    数据全部在本机处理 · 存档路径 <kbd>/data/data/&lt;包名&gt;/files/st3</kbd><br>
+    计算口径：v7.0 起 单曲 = 定数 + 分档加成 + 0.2 通关奖励；整体 = (b50 总和 + b10 总和) ÷ 60<br>
+    <a href="#" id="btnQuit" style="color:#646d85;text-decoration:underline">退出程序</a>
+  </footer>
+</div>
+
+<script>
+/* ── 教程数据 ─────────────────────────────────────── */
+const BRANDS = [
+  { id:'hw', name:'华为 / 荣耀', sys:'HarmonyOS 4.x · MagicOS', steps:[
+    '设置 → <b>关于手机</b> → 连续点「版本号」<b>7 次</b>（可能要输锁屏密码）',
+    '返回 设置 → <b>系统和更新</b> → <b>开发人员选项</b>',
+    '打开「<b>USB 调试</b>」，顺手也开「<b>仅充电模式下允许 ADB 调试</b>」',
+    '插线后下拉通知栏 → 点「正在通过 USB 充电」→ 选 <b>传输文件</b>'
+  ], notes:[
+    { t:'ok', s:'华为/荣耀的手机一般是鸿蒙或 MagicOS，adb 完全可用。' },
+    { t:'bad', s:'如果系统是「<b>纯血鸿蒙 HarmonyOS NEXT 5.x</b>」，它没有 adb（只有 hdc），也装不了安卓包 —— 请换一台安卓机，或看最后「手动导入」一节。' }
+  ]},
+  { id:'mi', name:'小米 / 红米', sys:'MIUI 14 · HyperOS', steps:[
+    '设置 → <b>我的设备</b> → <b>全部参数与信息</b> → 连续点「MIUI 版本 / OS 版本」<b>7 次</b>',
+    '设置 → <b>更多设置</b> → <b>开发者选项</b>',
+    '打开「<b>USB 调试</b>」',
+    '插线选 <b>传输文件</b>，手机弹窗勾「一律允许」再点允许'
+  ], notes:[
+    { t:'bad', s:'小米最常见的坑：<b>必须登录小米账号并插着 SIM 卡</b>，否则打开 USB 调试时会提示「验证失败，请插入 SIM 卡」。' },
+    { t:'', s:'个别机型还要额外打开「USB 调试（安全设置）」，同样需要登录账号。' }
+  ]},
+  { id:'op', name:'OPPO / 一加 / realme', sys:'ColorOS · realme UI', steps:[
+    '设置 → <b>关于本机</b> → <b>版本信息</b> → 连续点「版本号」<b>7 次</b>',
+    '设置 → <b>系统设置</b>（部分机型在「其他设置」）→ <b>开发者选项</b>',
+    '打开「<b>USB 调试</b>」',
+    '插线后通知栏选 <b>传输文件</b>'
+  ], notes:[
+    { t:'', s:'ColorOS 有时会默认开启「验证应用」，装驱动时把开发者选项里的相关开关关掉更顺。' }
+  ]},
+  { id:'vv', name:'vivo / iQOO', sys:'OriginOS · Funtouch', steps:[
+    '设置 → <b>系统管理</b> → <b>关于手机</b> → 连续点「软件版本号」<b>7 次</b>',
+    '设置 → <b>系统管理</b> → <b>开发者选项</b>',
+    '打开「<b>USB 调试</b>」',
+    '插线后通知栏选 <b>传输文件</b>'
+  ], notes:[
+    { t:'', s:'OriginOS 的「开发者选项」在「系统管理」里，不在「更多设置」，找不到就往这里翻。' }
+  ]},
+  { id:'ss', name:'三星', sys:'One UI', steps:[
+    '设置 → <b>关于手机</b> → <b>软件信息</b> → 连续点「版本号」<b>7 次</b>',
+    '返回 设置 → 最下面 <b>开发者选项</b>',
+    '打开「<b>USB 调试</b>」',
+    '插线后下拉通知栏 → USB 用途选 <b>传输文件</b>'
+  ], notes:[{ t:'ok', s:'三星对 adb 最友好，一般一次就通。' }]},
+  { id:'mz', name:'魅族 / 努比亚 / 其它', sys:'Flyme · MyOS', steps:[
+    '设置 → <b>关于手机</b> → 连续点「版本号」<b>7 次</b>',
+    '回到设置找 <b>开发者选项</b>（Flyme 在「辅助功能」里）',
+    '打开「<b>USB 调试</b>」'
+  ], notes:[{ t:'', s:'找不到开发者选项时，直接在设置顶部搜索框搜「开发者」。' }]},
+  { id:'px', name:'原生安卓 / Pixel', sys:'Android 12+', steps:[
+    '设置 → <b>关于手机</b> → 连续点「版本号」<b>7 次</b>',
+    '设置 → <b>系统</b> → <b>开发者选项</b>',
+    '打开「<b>USB 调试</b>」',
+    '插线后选「<b>文件传输</b>」，并允许这台电脑调试'
+  ], notes:[{ t:'ok', s:'原生系统没有厂商拦截，识别最快。' }]},
+  { id:'hm', name:'纯血鸿蒙 NEXT', sys:'HarmonyOS 5.x', steps:[
+    '这一类机型<b>不能直接用本工具</b>：系统没有 adb（只有 hdc），也不允许安装安卓 apk',
+    '国服《韵律源点》在这类机器上通常通过「卓易通」等兼容层运行，存档在兼容层沙箱里，电脑读不到',
+    '可行的替代：借一台安卓手机登录同一账号 → 同步一次成绩 → 用本工具导出'
+  ], notes:[
+    { t:'bad', s:'如果你手上只有纯血鸿蒙设备，请直接看最后一节「手动导入 st3」。' }
+  ]},
+  { id:'ios', name:'iPhone / iPad', sys:'iOS', steps:[
+    '本工具只支持安卓（靠 adb 读应用沙箱）',
+    'iOS 的存档在应用沙箱内，未越狱无法取出',
+    '建议：用一台安卓手机登录同一国服账号，同步成绩后再导出'
+  ], notes:[]},
+  { id:'manual', name:'手动导入 st3', sys:'兜底方案', steps:[
+    '<b>有 root 的安卓</b>：用 MT 管理器进 <kbd>/data/data/com.xd.arcaea.tapcn/files/</kbd>，把 <kbd>st3</kbd> 复制到内部存储，再传到电脑',
+    '<b>没有 root</b>：用 LSPatch + 上传模块（社区有 arc_st3_upload 一类模块），在游戏里点上传把 st3 导出来',
+    '<b>电脑模拟器</b>：从模拟器共享文件夹里直接拷 st3（路径同上）',
+    '拿到文件后，在上一步点「手动选择 st3 文件」导入即可 —— 效果和自动读取完全一样'
+  ], notes:[
+    { t:'ok', s:'st3 是纯 SQLite 明文文件，不加密，只要拿到就能算。' }
+  ]}
+];
+
+const GUIDE_EXTRA = `
+  <div class="note" style="margin-top:4px">
+    <b>找不到设备时按顺序排查：</b><br>
+    ① 换一根<b>能传数据</b>的线（很多充电线只有电）；② 换 USB 口，优先台式机后置口，别用扩展坞；
+    ③ 通知栏 USB 用途选「传输文件」；④ 手机上弹的授权窗勾「一律允许」；
+    ⑤ 还不行就拔插一次，或关掉杀软/手机助手类软件再试。
+  </div>`;
+
+/* ── 渲染教程 ─────────────────────────────────────── */
+const tabs = document.getElementById('tabs');
+const guides = document.getElementById('guides');
+BRANDS.forEach((b, i) => {
+  const t = document.createElement('div');
+  t.className = 'tab' + (i === 0 ? ' on' : '');
+  t.textContent = b.name;
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('.guide').forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('g_' + b.id).classList.add('on');
+  };
+  tabs.appendChild(t);
+
+  const g = document.createElement('div');
+  g.className = 'guide' + (i === 0 ? ' on' : '');
+  g.id = 'g_' + b.id;
+  g.innerHTML = `<div style="color:var(--dim2);font-size:12px;margin-bottom:8px">${b.sys}</div>
+    <ol>${b.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+    ${b.notes.map(n => `<div class="note ${n.t}">${n.s}</div>`).join('')}`;
+  guides.appendChild(g);
+});
+guides.insertAdjacentHTML('beforeend', GUIDE_EXTRA);
+
+/* ── 状态 ─────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const dot = $('dot'), msg = $('msg');
+
+function setStatus(kind, html) {
+  dot.className = 'dot ' + kind;
+  msg.innerHTML = html;
+}
+
+async function check() {
+  setStatus('', '正在检测…');
+  try {
+    const r = await fetch('/api/status').then(r => r.json());
+    if (r.ok) {
+      setStatus('ok', `<b>已连接</b>：${r.model || r.device.model} · Android ${r.android || '?'}`);
+      return true;
+    }
+    if (r.reason === 'unauthorized') {
+      setStatus('warn', '设备已识别，但<b>手机上还没点授权</b>。看手机屏幕，弹窗勾「一律允许使用这台计算机进行调试」再点允许。');
+    } else if (r.reason === 'no_device') {
+      setStatus('bad', r.message);
+    } else if (r.reason === 'missing_adb') {
+      setStatus('bad', '安装包里的 adb 丢了，可能被杀毒软件隔离，请重新解压。');
+    } else {
+      setStatus('bad', r.message);
+    }
+  } catch (e) {
+    setStatus('bad', '本地服务没响应，请重新打开程序。');
+  }
+  return false;
+}
+
+/* ── 导出 ─────────────────────────────────────────── */
+const logBox = $('log');
+function clearLog() { logBox.innerHTML = ''; logBox.classList.add('on'); }
+function addLog(lines, cls) {
+  (lines || []).forEach(l => {
+    const d = document.createElement('div');
+    if (cls) d.className = cls;
+    d.textContent = l;
+    logBox.appendChild(d);
+  });
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+async function pull() {
+  const btn = $('btnPull');
+  btn.disabled = true; btn.textContent = '读取中…';
+  clearLog(); addLog(['开始读取…']);
+  try {
+    const r = await fetch('/api/pull', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pkg: $('pkg').value })
+    }).then(r => r.json());
+    addLog(r.log || []);
+    if (!r.ok) {
+      addLog(['✗ ' + r.message], 'err');
+      if (r.need_manual) addLog(['→ 点上面「手动选择 st3 文件」导入，教程见最后一项'], 'err');
+      return;
+    }
+    render(r.result);
+  } catch (e) {
+    addLog(['✗ 请求失败：' + e], 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '开始读取';
+  }
+}
+
+function render(res) {
+  const s = res.summary;
+  $('result').classList.add('on');
+  $('ptt').textContent = s.ptt.toFixed(3);
+  $('kCount').textContent = s.count;
+  $('kCut50').textContent = s.cut50.toFixed(2);
+  $('kCut10').textContent = s.cut10.toFixed(2);
+  $('kAvg').textContent = s.avg50.toFixed(2);
+  $('hint').textContent = `B50 ${s.s50.toFixed(2)} + B10 ${s.s10.toFixed(2)}`;
+
+  const grid = $('grid');
+  grid.innerHTML = s.b50.map((p, i) => `
+    <div class="c ${i < 10 ? 't10' : ''}">
+      <div class="art">
+        <img src="/api/jacket/${p.songId}?t=${Date.now()}" alt="" loading="lazy"
+             onerror="this.style.opacity=0">
+        <div class="shade"></div>
+        <div class="rk">#${i + 1}</div>
+        ${i < 10 ? '<div class="x2">×2</div>' : ''}
+        <div class="lv" style="color:${p.color};border-color:${p.color}">${p.level}</div>
+        <div class="ct" style="color:${p.ct === 3 ? '#b98cf5' : p.ct === 2 ? '#5fd6a8' : '#98a0b5'}">${p.ctName}</div>
+      </div>
+      <div class="info">
+        <div class="name" title="${p.title} [${p.diffName}]">${p.title}</div>
+        <div class="nums"><span class="sp">${p.ptt.toFixed(3)}</span>
+          <span class="sc">${p.score.toLocaleString()}</span></div>
+      </div>
+    </div>`).join('');
+  $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── 按钮 ─────────────────────────────────────────── */
+$('btnCheck').onclick = check;
+$('btnPull').onclick = pull;
+
+$('fst3').onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  clearLog(); addLog([`读取本地文件：${f.name}（${(f.size / 1024).toFixed(0)} KB）`]);
+  const buf = await f.arrayBuffer();
+  let bin = '';
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  const b64 = btoa(bin);
+  const r = await fetch('/api/upload', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: b64 })
+  }).then(r => r.json());
+  addLog(r.log || []);
+  if (!r.ok) return addLog(['✗ ' + r.message], 'err');
+  render(r.result);
+  e.target.value = '';
+};
+
+$('btnJackets').onclick = async () => {
+  const b = $('btnJackets');
+  b.disabled = true; b.textContent = '补图中…';
+  const r = await fetch('/api/jackets', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ count: 50 })
+  }).then(r => r.json());
+  b.disabled = false; b.textContent = '补全曲绘';
+  if (r.ok) {
+    addLog([`曲绘 ${r.pulled}/${r.total || 0} 张`], 'ok');
+    document.querySelectorAll('#grid img').forEach(img => {
+      const src = img.src.split('?')[0];
+      img.src = src + '?t=' + Date.now();
+      img.style.opacity = 1;
+    });
+  }
+};
+
+$('btnViewer').onclick = () => {
+  window.open('/viewer/', '_blank');
+  const h = $('viewerHint');
+  h.style.display = 'block';
+  h.innerHTML = '完整分析页已在新标签打开：PTT 历史曲线、P50 / LS0 / MAX 多排行、定数区间查询、图片导出都在那里。';
+};
+
+$('btnCsv').onclick = async () => {
+  const r = await fetch('/api/export-csv').then(r => r.json());
+  if (r.ok) {
+    const h = $('viewerHint');
+    h.style.display = 'block';
+    h.innerHTML = `数据已写到 <kbd>${r.dir}</kbd>（all_scores.csv / ratings.csv）`;
+  }
+};
+
+$('btnQuit').onclick = async (e) => {
+  e.preventDefault();
+  await fetch('/api/quit');
+  document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#8b94ad">' +
+    '程序已退出，页面可以关掉了。</div>';
+};
+
+check().then(ok => {
+  if (location.search.includes('autopull') && ok) pull();
+});
+</script>
+</body>
+</html>
